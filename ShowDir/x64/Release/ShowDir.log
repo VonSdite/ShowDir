@@ -1,0 +1,9 @@
+﻿  Moc'ing DirGui.h...
+  Moc'ing DetailsDialog.h...
+  DetailsDialog.cpp
+  DirGui.cpp
+  main.cpp
+  qrc_DirGui.cpp
+  moc_DirGui.cpp
+  moc_DetailsDialog.cpp
+  ShowDir.vcxproj -> E:\1Code\TestRepositories\testC\000TESTQT\ShowDir\ShowDir\x64\Release\ShowDir.exe
