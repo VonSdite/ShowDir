@@ -31,5 +31,7 @@
 *.app
 
 x64/*
-./x64/*
 .vs/*
+*.log
+ShowDir/x64/*
+ShowDir.VC.VC.opendb
