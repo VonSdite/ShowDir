@@ -39,5 +39,7 @@ private:
 	void showDir();					// 显示搜索结果
 	void showDetails();				// 显示详情
 
+	void collaspeTreeView();
+
 	void onlineTreeViewClick();
 };

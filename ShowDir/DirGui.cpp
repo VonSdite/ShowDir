@@ -31,11 +31,6 @@ DirGui::DirGui(QWidget *parent)
 	// 初始化 Layout
 	initLayout();
 
-	/*QFileInfo data =  dirModel->fileInfo(dirModel->index("C:/"));
-	dirModel->dataChanged()
-	quint64 a = data.size();*/
-	//dirModel->setItemData(dirModel->index("E:/"),);
-
 }
 
 void DirGui::initDirModel()
@@ -65,17 +60,24 @@ void DirGui::initEditFrame()
 	// 输入框
 	dirEdit = new QLineEdit;
 	dirEdit->setPlaceholderText("Please enter dir");
+	connect(dirEdit, &QLineEdit::textChanged, this, &DirGui::collaspeTreeView);
 
 	// 查找按钮
 	confirmButton = new QPushButton;
-	confirmButton->setText("Search");
-	confirmButton->setShortcut(QKeySequence(QLatin1String("Enter")));	// 将回车设置会快捷键
+	confirmButton->setText("Search (Ctrl+E)");
+	// 将Ctrl+1设置会快捷键
+	confirmButton->setShortcut(QKeySequence(QApplication::translate("QtGuiApplication1Class", "Ctrl+E", Q_NULLPTR)));	
 	connect(confirmButton, &QPushButton::pressed, this, &DirGui::showDir);
 
 	detailsButton = new QPushButton;
 	detailsButton->setText("Details");
 	connect(detailsButton, &QPushButton::pressed, this, &DirGui::showDetails);
 	detailsButton->setDisabled(true);
+}
+
+void DirGui::collaspeTreeView()
+{
+	dirTreeView->collapseAll();
 }
 
 void DirGui::initLayout()
@@ -127,6 +129,6 @@ void DirGui::showDir()
 		return;
 	}
 	dirTreeView->setRootIndex(index);
-
+	dirTreeView->expandAll();
 	this->setWindowTitle(QString(dirEdit->text()));
 }

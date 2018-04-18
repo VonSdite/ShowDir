@@ -1,5 +1,6 @@
 #include "DetailsDialog.h"  
 #include <thread>
+#include <iostream>
 
 DetailsDialog::~DetailsDialog()
 {
@@ -9,31 +10,72 @@ DetailsDialog::~DetailsDialog()
 	delete gridLayout;
 }
 
-quint64 dirFileSize(const QString & path)
+quint64 DetailsDialog::calcSubDirSize(const QString &path)
 {
-	QDir dir(path);
 	QString recordPath = path;
 	recordPath.replace("/", "").replace("\\", "");
+	if (record[recordPath].size)
+		return record[recordPath].size;
+
+	record[recordPath].isCalc = true;
+	stack<QString> s;
+	s.push(path);
+
+	quint64 size = 0;
+	while (!s.empty())
+	{
+		QString p = s.top();
+		s.pop();
+
+		QDir dir(p);
+		//dir.entryInfoList(QDir::Files)返回文件信息 
+		foreach(QFileInfo fileInfo, dir.entryInfoList(QDir::Files))
+		{
+			//计算文件大小 
+			size += fileInfo.size();
+		}
+
+		//dir.entryList(QDir::Dirs|QDir::NoDotAndDotDot)返回所有子目录，并进行过滤 
+		foreach(QString subDir, dir.entryList(QDir::AllDirs | QDir::NoDotAndDotDot))
+		{
+			//若存在子目录，入栈
+			QString subPath = p + QDir::separator() + subDir;
+			s.push(subPath);
+		}
+	}
+	
+	record[recordPath].size = size;
+	return size;
+}
+
+quint64 DetailsDialog::dirFileSize(const QString & path)
+{
+	quint64 size = 0;
+	
+	QDir dir(path);
 	//dir.entryInfoList(QDir::Files)返回文件信息 
 	foreach(QFileInfo fileInfo, dir.entryInfoList(QDir::Files))
 	{
 		//计算文件大小 
-		record[recordPath].tmpSize += fileInfo.size();
+		size += fileInfo.size();
 	}
+
+	fileSize->setText(QString::number(size) + " Byte (loading...)");
 
 	//dir.entryList(QDir::Dirs|QDir::NoDotAndDotDot)返回所有子目录，并进行过滤 
-	foreach(QString subDir, dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot))
+	foreach(QString subDir, dir.entryList(QDir::AllDirs | QDir::NoDotAndDotDot))
 	{
-		//若存在子目录，则递归调用dirFileSize()函数 
-		quint64 tmp = 0;
 		QString subPath = path + QDir::separator() + subDir;
-		tmp = dirFileSize(subPath);
-		record[recordPath].tmpSize += tmp;
+		size += calcSubDirSize(subPath);
+		fileSize->setText(QString::number(size) + " Byte (loading...)");
 	}
-	record[recordPath].size = record[recordPath].tmpSize;
-	return record[recordPath].size;
-}
 
+	QString recordPath = path;
+	recordPath.replace("/", "").replace("\\", "");
+	record[recordPath].size = size;
+	fileSize->setText(QString::number(size) + " Byte");
+	return size;
+}
 DetailsDialog::DetailsDialog(QString name, QString path, quint64 size, QWidget *parent)
 {
 
@@ -41,11 +83,15 @@ DetailsDialog::DetailsDialog(QString name, QString path, quint64 size, QWidget *
 	Qt::WindowFlags flags = Qt::Dialog;
 	flags |= Qt::WindowCloseButtonHint;
 	setWindowFlags(flags);
+	setWindowTitle(path);
 
-	
-	fileName = new QLabel(QString("File Path: " + name));
-	filePath = new QLabel(QString("File Path: " + path));
-	fileSize = new QLabel("File Size: " + QString::number(size) + " Byte");
+	fileNameText = new QLabel(QString("File Name: " ));
+	fileSizeText = new QLabel(QString("File Size: " ));
+	filePathText = new QLabel(QString("File Path: " ));
+
+	fileName = new QLabel(name);
+	filePath = new QLabel(path);
+	fileSize = new QLabel(QString::number(size) + " Byte");
 
 	QFileInfo info(path);
 	if (info.isDir())
@@ -54,24 +100,28 @@ DetailsDialog::DetailsDialog(QString name, QString path, quint64 size, QWidget *
 		recordPath.replace("/", "").replace("\\", "");
 		if (record[recordPath].size != 0)
 		{
-			fileSize->setText("File Size: " + QString::number(record[recordPath].size) + " Byte");
+			fileSize->setText(QString::number(record[recordPath].size) + " Byte");
 		}
 		else
 		{
-			fileSize->setText("File Size: " + QString("Next reopen may show"));
-			if (record[recordPath].tmpSize == 0)
+			fileSize->setText(QString("Size loading..."));
+			
+			if (!record[recordPath].isCalc)
 			{
-				std::thread t(dirFileSize, path);
+				record[recordPath].isCalc = true;
+				std::thread t(&DetailsDialog::dirFileSize, this, path);
 				t.detach();
 			}
 		}
 	}
 
 	gridLayout = new QGridLayout;
-	gridLayout->addWidget(fileName, 0, 0);
-	gridLayout->addWidget(filePath, 1, 0);
-	gridLayout->addWidget(fileSize, 2, 0);
-	gridLayout->setColumnStretch(2, 2);
+	gridLayout->addWidget(fileNameText, 0, 0);
+	gridLayout->addWidget(fileName, 0, 1);
+	gridLayout->addWidget(filePathText, 1, 0);
+	gridLayout->addWidget(filePath, 1, 1);
+	gridLayout->addWidget(fileSizeText, 2, 0);
+	gridLayout->addWidget(fileSize, 2, 1);
 
 	setLayout(gridLayout);
 

@@ -6,14 +6,15 @@
 #include <QFileInfo>
 #include <QDir>
 #include <map>
+#include <stack>
 #include <QThread>
 
 using namespace std;
 
 struct dirRecord
 {
-	quint64 tmpSize;
 	quint64 size;
+	bool isCalc;
 };
 
 class DetailsDialog : public QDialog
@@ -30,6 +31,12 @@ private:
 	QLabel * fileName;
 	QLabel * fileSize;
 	QLabel * filePath;
+
+	QLabel * fileNameText;
+	QLabel * fileSizeText;
+	QLabel * filePathText;
+	quint64 dirFileSize(const QString & path);
+	quint64 calcSubDirSize(const QString &path);
 };
 
 static map<QString, dirRecord> record;
