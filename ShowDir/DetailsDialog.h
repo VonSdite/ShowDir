@@ -8,6 +8,7 @@
 #include <map>
 #include <stack>
 #include <QThread>
+#include <QLockFile>
 
 using namespace std;
 
@@ -16,6 +17,8 @@ struct dirRecord
 	quint64 size;
 	bool isCalc;
 };
+
+static map<QString, dirRecord> record;
 
 class DetailsDialog : public QDialog
 {
@@ -37,6 +40,7 @@ private:
 	QLabel * filePathText;
 	quint64 dirFileSize(const QString & path);
 	quint64 calcSubDirSize(const QString &path);
+	void waitFileSize(const QString &path);
 };
 
-static map<QString, dirRecord> record;
+

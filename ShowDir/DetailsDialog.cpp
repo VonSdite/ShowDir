@@ -21,6 +21,8 @@ quint64 DetailsDialog::calcSubDirSize(const QString &path)
 	stack<QString> s;
 	s.push(path);
 
+	//QLockFile lock(path);
+	//lock.lock();
 	quint64 size = 0;
 	while (!s.empty())
 	{
@@ -43,6 +45,7 @@ quint64 DetailsDialog::calcSubDirSize(const QString &path)
 			s.push(subPath);
 		}
 	}
+	//lock.unlock();
 	
 	record[recordPath].size = size;
 	return size;
@@ -76,6 +79,13 @@ quint64 DetailsDialog::dirFileSize(const QString & path)
 	fileSize->setText(QString::number(size) + " Byte");
 	return size;
 }
+
+void DetailsDialog::waitFileSize(const QString &path)
+{
+	while (!record[path].size);
+	fileSize->setText(QString::number(record[path].size) + " Byte");
+}
+
 DetailsDialog::DetailsDialog(QString name, QString path, quint64 size, QWidget *parent)
 {
 
@@ -110,6 +120,11 @@ DetailsDialog::DetailsDialog(QString name, QString path, quint64 size, QWidget *
 			{
 				record[recordPath].isCalc = true;
 				std::thread t(&DetailsDialog::dirFileSize, this, path);
+				t.detach();
+			}
+			else
+			{
+				std::thread t(&DetailsDialog::waitFileSize, this, recordPath);
 				t.detach();
 			}
 		}
